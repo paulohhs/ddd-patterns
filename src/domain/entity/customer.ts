@@ -29,6 +29,10 @@ export default class Customer {
         return this._active;
     }
 
+    get address(): Address {
+        return this._address;
+    }
+
     set address(address: Address) {
         this._address = address;
     }

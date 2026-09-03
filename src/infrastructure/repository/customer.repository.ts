@@ -55,7 +55,7 @@ export default class CustomerRepository implements CustomerRepositoryInterface {
             throw new Error("Customer not found");
         }
 
-        const customer = new Customer(customerModel.id, customerModel.name);
+        const customer = new Customer(id, customerModel.name);
         const address = new Address(
             customerModel.street,
             customerModel.number,

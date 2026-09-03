@@ -25,12 +25,12 @@ describe("Customer repository tests", () => {
 
     it("should create a customer", async () => {
         const customerRepository = new CustomerRepository();
-        const customer = new Customer("123", "Customer 1");
+        const customer = new Customer("1", "Customer 1");
         const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
         customer.address = address;
         await customerRepository.create(customer);
 
-        const customerModel = await CustomerModel.findOne({ where: { id: "123" } });
+        const customerModel = await CustomerModel.findOne({ where: { id: "1" } });
 
         if (!customerModel) {
             throw new Error("Customer was not created");
@@ -101,7 +101,7 @@ describe("Customer repository tests", () => {
         if (!foundCustomer) {
             throw new Error("Customer was not found");
         }
-        expect(customer).toStrictEqual({foundCustomer});
+        expect(customer).toStrictEqual(foundCustomer);
     });
 
     it("should find all customers", async () => {
