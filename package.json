@@ -13,5 +13,11 @@
   },
   "scripts": {
     "test": "jest"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2",
+    "sequelize": "^6.37.8",
+    "sequelize-typescript": "^2.1.6",
+    "sqlite3": "^6.0.1"
   }
 }
