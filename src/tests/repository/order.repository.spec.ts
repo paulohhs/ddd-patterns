@@ -13,69 +13,69 @@ import Order from "../../domain/entity/order";
 import OrderItem from "../../domain/entity/order_item";
 
 describe("Order repository tests", () => {
-    let sequelize: Sequelize;
+  let sequelize: Sequelize;
 
-    beforeEach(async () => {
-        sequelize = new Sequelize({
-            dialect: "sqlite",
-            storage: ":memory:",
-            logging: false,
-            sync: { force: true },
-        });
+  beforeEach(async () => {
+      sequelize = new Sequelize({
+          dialect: "sqlite",
+          storage: ":memory:",
+          logging: false,
+          sync: { force: true },
+      });
 
-        sequelize.addModels([CustomerModel, OrderModel, OrderItemModel, ProductModel]);
-        await sequelize.sync();
-    });
+      sequelize.addModels([CustomerModel, OrderModel, OrderItemModel, ProductModel]);
+      await sequelize.sync();
+  });
 
-    afterEach(async () => {
-        await sequelize.close();
-    });
+  afterEach(async () => {
+      await sequelize.close();
+  });
 
-    it("should create an order", async () => {
-        // Test implementation
-        const customerRepository = new CustomerRepository();
-        const customer = new Customer("1", "Customer 1");
-        const address = new Address("Street 1", 123, "123456-789", "City 1");
-        customer.changeAddress(address);
-        await customerRepository.create(customer);
+  it("should create an order", async () => {
+      // Test implementation
+      const customerRepository = new CustomerRepository();
+      const customer = new Customer("1", "Customer 1");
+      const address = new Address("Street 1", 123, "123456-789", "City 1");
+      customer.changeAddress(address);
+      await customerRepository.create(customer);
 
-        const productRepository = new ProductRepository();
-        const product = new Product("1", "Product 1", 100);
-        await productRepository.create(product);
+      const productRepository = new ProductRepository();
+      const product = new Product("1", "Product 1", 100);
+      await productRepository.create(product);
 
-        const orderItem = new OrderItem("1", product.name, product.price, product.id, 2);
+      const orderItem = new OrderItem("1", product.name, product.price, product.id, 2);
 
-        const order = new Order("1", customer.id, [orderItem]);
+      const order = new Order("1", customer.id, [orderItem]);
 
-        const orderRepository = new OrderRepository();
-        await orderRepository.create(order);
+      const orderRepository = new OrderRepository();
+      await orderRepository.create(order);
 
-        const orderModel = await OrderModel.findOne({
-            where: { id: order.id },
-            include: ["items"],
-        });
+      const orderModel = await OrderModel.findOne({
+          where: { id: order.id },
+          include: ["items"],
+      });
 
-        if(!orderModel) {
-            throw new Error("Order not found");
-        }
-        expect(orderModel.toJSON()).toStrictEqual({
-            id: "1",
-            customer_id: "1",
-            total: 200,
-            items: [
-                {
-                    id: orderItem.id,
-                    name: orderItem.name,
-                    price: orderItem.price,
-                    product_id: orderItem.productId,
-                    quantity: orderItem.quantity,
-                    order_id: order.id,
-                },
-            ],
-        });
-    });
+      if(!orderModel) {
+          throw new Error("Order not found");
+      }
+      expect(orderModel.toJSON()).toStrictEqual({
+          id: "1",
+          customer_id: "1",
+          total: 200,
+          items: [
+              {
+                  id: orderItem.id,
+                  name: orderItem.name,
+                  price: orderItem.price,
+                  product_id: orderItem.productId,
+                  quantity: orderItem.quantity,
+                  order_id: order.id,
+              },
+          ],
+      });
+  });
 
-    it("should update item quantity in an order", async () => {
+  it("should update item quantity in an order", async () => {
     const customerRepository = new CustomerRepository();
     const customer = new Customer("123", "Customer 1");
     const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
@@ -99,6 +99,7 @@ describe("Order repository tests", () => {
     const orderRepository = new OrderRepository();
     await orderRepository.create(order);
 
+    // ADD quantity to order item
     order.items[0]!.changeQuantity(3);
     await orderRepository.update(order);
 
@@ -107,11 +108,7 @@ describe("Order repository tests", () => {
       include: ["items"],
     });
 
-    if(!orderModel) {
-      throw new Error("Order not found");
-    }
-
-    expect(orderModel.toJSON()).toStrictEqual({
+    expect(orderModel!.toJSON()).toStrictEqual({
       id: "123",
       customer_id: "123",
       total: order.total(),
@@ -120,12 +117,68 @@ describe("Order repository tests", () => {
           id: orderItem.id,
           name: orderItem.name,
           price: orderItem.price,
-          quantity: orderItem.quantity,
+          quantity: 5,
           order_id: "123",
           product_id: "123",
         },
       ],
     });
+
+    const orderToUpdate = await orderRepository.find(order.id);
+
+    // REMOVE quantity from order item
+    orderToUpdate.items[0]!.changeQuantity(-2);
+    await orderRepository.update(orderToUpdate);
+    
+    const orderNewUpdate = await OrderModel.findOne({
+      where: { id: order.id },
+      include: ["items"],
+    });
+
+    expect(orderNewUpdate!.toJSON()).toStrictEqual({
+      id: "123",
+      customer_id: "123",
+      total: orderToUpdate.total(),
+      items: [
+        {
+          id: orderToUpdate.items[0]!.id,
+          name: orderToUpdate.items[0]!.name,
+          price: orderToUpdate.items[0]!.price,
+          quantity: 3,
+          order_id: "123",
+          product_id: "123",
+        },
+      ],
+    });
+  });
+
+  it("should throw an error when trying to remove more quantity than available in an order item", async () => {
+    const customerRepository = new CustomerRepository();
+    const customer = new Customer("123", "Customer 1");
+    const address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    customer.changeAddress(address);
+    await customerRepository.create(customer);
+
+    const productRepository = new ProductRepository();
+    const product = new Product("123", "Product 1", 10);
+    await productRepository.create(product);
+
+    const orderItem = new OrderItem(
+      "1",
+      product.name,
+      product.price,
+      product.id,
+      2
+    );
+
+    const order = new Order("123", "123", [orderItem]);
+
+    const orderRepository = new OrderRepository();
+    await orderRepository.create(order);
+
+    expect(() => {
+      order.items[0]!.changeQuantity(-3);
+    }).toThrow("Quantity cannot be less than 0. Remove the item from the order if you want to remove it completely.");
   });
 
   it("should update an order with new item", async () => {
@@ -171,11 +224,7 @@ describe("Order repository tests", () => {
       include: ["items"],
     });
 
-    if(!orderModel) {
-      throw new Error("Order not found");
-    }
-
-    expect(orderModel.toJSON()).toStrictEqual({
+    expect(orderModel!.toJSON()).toStrictEqual({
       id: "1",
       customer_id: "1",
       total: order.total(),
