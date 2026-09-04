@@ -13,6 +13,18 @@ export default class OrderItem {
         this._quantity = quantity;
     }
 
+    get id(): string {
+        return this._id;
+    }
+
+    get name(): string {
+        return this._name;
+    }
+
+    get productId(): string {
+        return this._productId;
+    }
+
     get price(): number {
         return this._price;
     }
@@ -20,6 +32,15 @@ export default class OrderItem {
     get quantity(): number {
         return this._quantity;
     }
+
+    changeQuantity(quantity: number): void {
+    if(quantity < 0) {
+      this._quantity -= quantity;
+    }
+    else if(quantity > 0) {
+      this._quantity += quantity;
+    }
+  }
 
     orderItemTotal(): number {
         return this._price * this._quantity;
