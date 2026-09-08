@@ -1,4 +1,4 @@
-import EventInterface from "../@shared/event.interface";
+import EventInterface from "../../@shared/event/event.interface";
 import CustomerAddressChangedEvent from "../event/customer-address-changed.event";
 import CustomerCreatedEvent from "../event/customer-created.event";
 import Address from "../value-object/address";
