@@ -9,6 +9,13 @@ const config: Config = {
   transform: {
     "^.+\\.(t|j)sx?$": "@swc/jest",
   },
+
+  // O pacote "uuid" (v14) é ESM puro. Como os testes rodam em CommonJS,
+  // ele precisa ser transformado pelo @swc/jest em vez de ser ignorado.
+  transformIgnorePatterns: [
+    "/node_modules/(?!uuid)",
+    "\\.pnp\\.[^\\/]+$",
+  ],
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
