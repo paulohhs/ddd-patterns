@@ -2,8 +2,11 @@ import Customer from "../../domain/entity/customer";
 import CustomerModel from "../db/sequelize/model/customer.model";
 import CustomerRepositoryInterface from "../../domain/repository/customer-repository.interface";
 import Address from "../../domain/entity/address";
+import EventDispatcherInterface from "../../domain/event/@shared/event-dispatcher.interface";
 
 export default class CustomerRepository implements CustomerRepositoryInterface {
+    constructor(private eventDispatcher?: EventDispatcherInterface) {}
+
     async create(entity: Customer): Promise<void> {
         await CustomerModel.create({
             id: entity.id,
@@ -15,6 +18,8 @@ export default class CustomerRepository implements CustomerRepositoryInterface {
             zip: entity.address.zip,
             city: entity.address.city
         });
+
+        this.publishEvents(entity);
     }
 
     async update(entity: Customer): Promise<void> {
@@ -34,6 +39,8 @@ export default class CustomerRepository implements CustomerRepositoryInterface {
                 } 
             }
         );
+
+        this.publishEvents(entity);
     }
 
     async delete(id: string): Promise<void> {
@@ -63,6 +70,7 @@ export default class CustomerRepository implements CustomerRepositoryInterface {
             customerModel.city
         );
         customer.changeAddress(address);
+        customer.clearEvents()
 
         return customer;
     }
@@ -84,8 +92,15 @@ export default class CustomerRepository implements CustomerRepositoryInterface {
                 customer.activate();
             }
 
+            customer.clearEvents()
+
             return customer;
         });
         return customers;
+    }
+
+    private publishEvents(entity: Customer): void {
+        entity.events.forEach((event) => this.eventDispatcher?.notify(event));
+        entity.clearEvents();
     }
 }
