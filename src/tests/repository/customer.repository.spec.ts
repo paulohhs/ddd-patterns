@@ -3,6 +3,9 @@ import CustomerModel from "../../infrastructure/db/sequelize/model/customer.mode
 import Customer from "../../domain/entity/customer";
 import CustomerRepository from "../../infrastructure/repository/customer.repository";
 import Address from "../../domain/entity/address";
+import EventDispatcher from "../../domain/event/@shared/event-dispatcher";
+import EnviaConsoleLog1Handler from "../../domain/event/customer/handler/envia-console-log-1.handler";
+import EnviaConsoleLogHandler from "../../domain/event/customer/handler/envia-console-log.handler";
 
 describe("Customer repository tests", () => {
     let sequelize: Sequelize;
@@ -132,4 +135,45 @@ describe("Customer repository tests", () => {
             await customerRepository.find("456ABC");
         }).rejects.toThrow("Customer not found");
     });
+
+    it("should publish the customer events only after persisting", async () => {
+    const eventDispatcher = new EventDispatcher();
+    const handler = new EnviaConsoleLog1Handler();
+    const spyHandler = jest.spyOn(handler, "handle");
+    eventDispatcher.register("CustomerCreatedEvent", handler);
+
+    const customerRepository = new CustomerRepository(eventDispatcher);
+    const customer = new Customer("123", "Customer 1");
+    customer.address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+
+    expect(customer.events).toHaveLength(1);
+    expect(spyHandler).not.toHaveBeenCalled();
+
+    await customerRepository.create(customer);
+
+    expect(spyHandler).toHaveBeenCalledTimes(1);
+    expect(customer.events).toHaveLength(0);
+  });
+
+  it("should publish the customer events when change address only after persisting", async () => {
+    const eventDispatcher = new EventDispatcher();
+    const handler = new EnviaConsoleLogHandler();
+    const spyHandler = jest.spyOn(handler, "handle");
+    eventDispatcher.register("CustomerAddressChangedEvent", handler);
+
+    const customerRepository = new CustomerRepository(eventDispatcher);
+    const customer = new Customer("123", "Customer 1");
+    customer.address = new Address("Street 1", 1, "Zipcode 1", "City 1");
+    await customerRepository.create(customer);
+
+    const address = new Address("Street 2", 2, "Zipcode 2", "City 2");
+    customer.changeAddress(address)
+    expect(customer.events).toHaveLength(1);
+    expect(spyHandler).not.toHaveBeenCalled();
+
+    await customerRepository.update(customer);
+
+    expect(spyHandler).toHaveBeenCalledTimes(1);
+    expect(customer.events).toHaveLength(0);
+  });
 });
