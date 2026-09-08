@@ -1,3 +1,6 @@
+import EventInterface from "../event/@shared/event.interface";
+import CustomerAddressChangedEvent from "../event/customer/customer-address-changed.event";
+import CustomerCreatedEvent from "../event/customer/customer-created.event";
 import Address from "./address";
 
 export default class Customer {
@@ -6,11 +9,16 @@ export default class Customer {
     private _address!: Address;
     private _active: boolean = false;
     private _rewardPoints: number = 0;
+    private _events: EventInterface[] = [];
 
     constructor(id: string, name: string) {
         this._id = id;
         this._name = name;
         this.validate();
+
+        this._events.push(
+            new CustomerCreatedEvent({ id: this._id, name: this._name })
+        );
     }
 
     get id(): string {
@@ -33,6 +41,10 @@ export default class Customer {
         return this._address;
     }
 
+    get events(): EventInterface[] {
+        return [...this._events];
+    }
+
     set address(address: Address) {
         this._address = address;
     }
@@ -46,6 +58,10 @@ export default class Customer {
         }
     }
 
+    clearEvents() {
+        this._events = [];
+    }
+
     changeName(name: string): void {
         this._name = name;
         this.validate();
@@ -53,6 +69,9 @@ export default class Customer {
 
     changeAddress(address: Address): void {
         this._address = address;
+        this._events.push(
+            new CustomerAddressChangedEvent({ id: this._id, name: this._name, address: address.toString() })
+        );
     }
 
     isActive(): boolean {
