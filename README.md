@@ -4,6 +4,7 @@
 
 ### Instalar dependências:
 `npm install --verbose --no-fund --no-audit`
+
 `npm install --verbose --no-fund --no-audit sequelize sqlite3`
 
 ### Executar testes
