@@ -4,24 +4,24 @@ import OrderItemModel from "./order-item.model";
 import OrderModel from "./order.model";
 
 export default class OrderRepository {
-    async create(entity: Order): Promise<void> {
-        await OrderModel.create({
-            id: entity.id,
-            customer_id: entity.customerId,
-            total: entity.total(),
-            items: entity.items.map((item) => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
-                product_id: item.productId,
-            })),
-        }, {
-            include: [{ model: OrderItemModel, as: "items" }],
-        });
-    }
+  async create(entity: Order): Promise<void> {
+    await OrderModel.create({
+      id: entity.id,
+      customer_id: entity.customerId,
+      total: entity.total(),
+      items: entity.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          product_id: item.productId,
+      })),
+    }, {
+        include: [{ model: OrderItemModel, as: "items" }],
+    });
+  }
 
-    async update(entity: Order): Promise<void> {
+  async update(entity: Order): Promise<void> {
     await OrderModel.update(
       {
         customer_id: entity.customerId,
@@ -29,6 +29,8 @@ export default class OrderRepository {
       },
       { where: { id: entity.id } }
     );
+
+    await OrderItemModel.destroy({ where: { order_id: entity.id } })
 
     await OrderItemModel.bulkCreate(
       entity.items.map((item) => ({
